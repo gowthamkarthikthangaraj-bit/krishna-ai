@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="ta">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Krishna AI — Tamil Voice</title>
+<style>
+body{margin:0;font-family:system-ui,sans-serif;background:linear-gradient(160deg,#071b18,#123c32);color:#fff;min-height:100vh}
+.wrap{max-width:680px;margin:auto;padding:24px}
+.card{background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.14);border-radius:24px;padding:22px;box-shadow:0 12px 40px #0005}
+h1{text-align:center;margin:8px 0 4px}.sub{text-align:center;opacity:.75}
+#status{text-align:center;margin:18px 0;padding:10px;border-radius:12px;background:#0003}
+button{width:100%;padding:16px;margin:7px 0;border:0;border-radius:15px;font-size:16px;font-weight:700}
+#listen{background:#e9c46a;color:#17120a}#stop{background:#fff2;color:#fff}
+#answer{line-height:1.7;white-space:pre-wrap;margin-top:15px}
+.small{font-size:13px;opacity:.7;text-align:center;margin-top:18px}
+</style>
+</head>
+<body>
+<div class="wrap"><div class="card">
+<div style="text-align:center;font-size:42px">🦚</div>
+<h1>Krishna AI</h1>
+<div class="sub">தமிழில் பேசுங்கள் • பக்தி அறிவு • Voice Reply</div>
+<div id="status">🎙️ பேசத் தயாராக உள்ளது</div>
+<button id="listen">🎙️ Krishna AI-யிடம் பேசு</button>
+<button id="stop">⏹️ நிறுத்து</button>
+<div id="answer">உதாரணம்: “கிருஷ்ணா, வாழ்க்கையில் குழப்பமாக இருக்கிறது. என்ன செய்யலாம்?”</div>
+<div class="small">இது ஒரு ஆரம்ப prototype. பதில்கள் ஆன்மிக வழிகாட்டுதலாக மட்டுமே எடுத்துக்கொள்ளவும்.</div>
+</div></div>
+
+<script>
+const statusEl=document.getElementById('status'), answer=document.getElementById('answer');
+let rec=null;
+const knowledge=[
+["கடமை","பகவத் கீதையின் கர்மயோக போதனையில், ஒருவர் தன் கடமையைச் செய்வதில் கவனம் செலுத்த வேண்டும்; செயலின் பலனைப் பற்றிய பற்றை குறைக்க வேண்டும்."],
+["குழப்பம்","அர்ஜுனனின் குழப்பத்திற்கு கிருஷ்ணர் தர்மம், ஆத்மா, கர்மம், யோகம் ஆகியவற்றை விளக்கி தெளிவு அளிக்கிறார். சிரமமான நேரத்தில் அவசர முடிவுக்கு பதிலாக தெளிவாக சிந்திப்பது முக்கியம்."],
+["பக்தி","கிருஷ்ண பக்தியில் அன்பு, நினைவு, நாமஸ்மரணம், சேவை போன்றவை முக்கியமான வழிகளாகக் கருதப்படுகின்றன."],
+["அமைதி","மனம் அலைபாயும் போது ஒழுக்கமான பயிற்சி, தியானம், நல்ல செயல்கள் மற்றும் இறைநினைவு மன அமைதிக்கு உதவலாம்."],
+["கீதா","பகவத் கீதை மகாபாரதத்தின் பீஷ்ம பர்வத்தில் இடம்பெறும் கிருஷ்ணர்–அர்ஜுனர் உரையாடல். இது 18 அத்தியாயங்களைக் கொண்டது."]
+];
+
+function makeReply(q){
+ q=q.toLowerCase();
+ for(const [k,v] of knowledge) if(q.includes(k)){
+   return "மகனே, "+v+"\\n\\n🕉️ இதை உன் வாழ்க்கையில் நடைமுறையாகப் பயன்படுத்த முயற்சி செய்.";
+ }
+ if(q.includes("யார்")&&q.includes("கிருஷ்ண")) return "கிருஷ்ணர் இந்து மரபில் விஷ்ணுவின் அவதாரமாகவும், பகவத் கீதையின் உபதேசகராகவும் போற்றப்படுகிறார்.";
+ if(q.includes("வணக்கம்")||q.includes("ஹலோ")) return "வணக்கம் மகனே. அமைதியாக கேள்; உனக்குத் தெரிந்தவரை பக்தி மற்றும் கீதையின் அடிப்படையில் பதில் சொல்ல நான் இங்கே இருக்கிறேன்.";
+ return "மகனே, உன் கேள்வியை புரிந்துகொண்டேன். இந்த ஆரம்ப பதிப்பில் எனது அறிவு வரம்புடையது. பகவத் கீதையின் கருத்துகளை அடிப்படையாகக் கொண்டு பதில் அளிக்க முயற்சி செய்கிறேன். குறிப்பிட்ட கேள்வியை இன்னும் தெளிவாகக் கேள்.";
+}
+function speak(text){
+ speechSynthesis.cancel();
+ const u=new SpeechSynthesisUtterance(text);
+ u.lang="ta-IN"; u.rate=.86; u.pitch=.82;
+ const voices=speechSynthesis.getVoices();
+ const v=voices.find(x=>x.lang.toLowerCase().startsWith("ta"));
+ if(v) u.voice=v;
+ speechSynthesis.speak(u);
+}
+function start(){
+ const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+ if(!SR){statusEl.textContent="❌ இந்த browser voice input-ஐ support செய்யவில்லை. Chrome-ல் முயற்சி செய்.";return}
+ rec=new SR(); rec.lang="ta-IN"; rec.interimResults=false; rec.continuous=false;
+ rec.onstart=()=>statusEl.textContent="🔴 கேட்கிறேன்... தமிழில் பேசு";
+ rec.onresult=e=>{
+   const q=e.results[0][0].transcript;
+   statusEl.textContent="🧠 பதில் தயாராகிறது...";
+   const r=makeReply(q); answer.textContent="நீ: "+q+"\\n\\n🦚 Krishna AI:\\n"+r;
+   speak(r); statusEl.textContent="🔊 பதில் சொல்கிறேன்...";
+ };
+ rec.onerror=e=>{
+  if(e.error==="not-allowed" || e.error==="service-not-allowed"){
+    statusEl.textContent="⚠️ Microphone permission blocked. Chrome-ல் site microphone permission Allow செய்யவும். Downloaded content:// file-ல் Voice Recognition சில நேரம் வேலை செய்யாது; HTTPS web page-ல் திறக்க வேண்டும்.";
+    answer.textContent="🎙️ Microphone permission தேவை. முதலில் Chrome → Settings → Site settings → Microphone → Allow.\n\nகுறிப்பு: இந்த downloaded HTML content:// URL-ல் Speech Recognition block ஆகலாம். அடுத்த version-ஐ HTTPS web page ஆக host செய்தால் சரியாக வேலை செய்யும்.";
+  } else {
+    statusEl.textContent="⚠️ Voice error: "+e.error;
+  }
+};
+ rec.onend=()=>{if(statusEl.textContent.includes("கேட்கிறேன்"))statusEl.textContent="🎙️ மீண்டும் பேசலாம்";}
+ rec.start();
+}
+document.getElementById('listen').onclick=start;
+document.getElementById('stop').onclick=()=>{if(rec)rec.stop();speechSynthesis.cancel();statusEl.textContent="⏹️ நிறுத்தப்பட்டது";}
+speechSynthesis.onvoiceschanged=()=>{};
+</script>
+</body></html>
